@@ -6,8 +6,6 @@ This repository is a public distribution repository. The source code is maintain
 
 The public repository intentionally does not contain `src/`, `Cargo.toml`, build workflows, or release configuration. That separation keeps the user-facing repository small while allowing all tools to share the same release infrastructure in `verzly/toolchain`.
 
-## Contents
-
 - [Overview](#overview)
   - [Why this exists](#why-this-exists)
   - [How it works](#how-it-works)
@@ -27,7 +25,6 @@ The public repository intentionally does not contain `src/`, `Cargo.toml`, build
   - [Release artifacts](#release-artifacts)
   - [Operational notes](#operational-notes)
 - [Contributing](#contributing)
-
 
 ## Overview
 
