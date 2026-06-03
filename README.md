@@ -8,32 +8,42 @@ The public repository intentionally does not contain `src/`, `Cargo.toml`, build
 
 ## Contents
 
-- [Why this exists](#why-this-exists)
-- [How it works](#how-it-works)
-- [Use cases](#use-cases)
-- [GitHub Action](#github-action)
-- [Action inputs](#action-inputs)
-- [Action outputs](#action-outputs)
-- [CLI usage](#cli-usage)
-- [CLI commands and arguments](#cli-commands-and-arguments)
+- [Overview](#overview)
+  - [Why this exists](#why-this-exists)
+  - [How it works](#how-it-works)
+  - [Use cases](#use-cases)
+- [Get started](#get-started)
+  - [GitHub Action](#github-action)
+- [Usage](#usage)
+  - [Action inputs](#action-inputs)
+  - [Action outputs](#action-outputs)
+  - [CLI usage](#cli-usage)
+  - [CLI commands and arguments](#cli-commands-and-arguments)
 - [Configuration](#configuration)
-- [Release artifacts](#release-artifacts)
-- [Operational notes](#operational-notes)
+- [Practical workflows](#practical-workflows)
+  - [Practical cache workflows](#practical-cache-workflows)
+- [Reference](#reference)
+  - [Troubleshooting](#troubleshooting)
+  - [Release artifacts](#release-artifacts)
+  - [Operational notes](#operational-notes)
 - [Contributing](#contributing)
 
-## Why this exists
+
+## Overview
+
+### Why this exists
 
 Rust and Tauri builds generate large directories such as `target/`, Gradle caches, Android build output, and other intermediate files. In monorepos these paths can become hard to remove safely, and local builds can pollute the repository root or the developer machine.
 
 `rust-cache` centralizes those generated files under a configurable cache directory, defaulting to `.cache`. The intent is simple: project files stay visible, disposable build output is grouped, and cache cleanup is predictable.
 
-## How it works
+### How it works
 
 The tool detects the workspace root using Cargo metadata first, then Git, then the current directory. It builds an environment plan and either prints it or runs a command with those environment variables applied.
 
 By default it redirects `CARGO_TARGET_DIR` to a package-specific directory under `.cache`. It can also redirect `GRADLE_USER_HOME` for Android/Tauri builds and optionally `CARGO_HOME` when a fully project-local Cargo home is desired.
 
-## Use cases
+### Use cases
 
 Use `rust-cache` when you want to:
 
@@ -44,7 +54,9 @@ Use `rust-cache` when you want to:
 - make local development and CI use the same cache layout;
 - delete all generated build output by removing one `.cache` directory.
 
-## GitHub Action
+## Get started
+
+### GitHub Action
 
 ```yaml
 - uses: verzly/rust-cache@v1
@@ -66,7 +78,9 @@ The composite action detects the runner operating system and CPU architecture, m
 
 The action does not build from source. It does not clone `verzly/toolchain`. It only consumes the release assets published here.
 
-## Action inputs
+## Usage
+
+### Action inputs
 
 | Input | Required | Default | Accepted values | Purpose |
 | --- | --- | --- | --- | --- |
@@ -76,14 +90,14 @@ The action does not build from source. It does not clone `verzly/toolchain`. It 
 | `args` | No | `--help` | Any valid CLI argument string for the executable | Passed to the installed executable when `install-only` is not `"true"`. Quote values carefully because this string is evaluated by the shell. |
 | `working-directory` | No | `.` | Relative or absolute path | Directory where the executable runs when `install-only` is not `"true"`. |
 
-## Action outputs
+### Action outputs
 
 | Output | Value | Purpose |
 | --- | --- | --- |
 | `bin-path` | Absolute path to the installed executable | Use this when a later step should invoke the exact binary path instead of relying on `PATH`. |
 | `host-target` | Rust-style host target such as `x86_64-unknown-linux-gnu` | Shows which release asset was selected for the current runner. |
 
-## CLI usage
+### CLI usage
 
 ```sh
 rust-cache init
@@ -93,35 +107,35 @@ rust-cache clean --config rust-cache.toml
 rust-cache doctor --config rust-cache.toml
 ```
 
-## CLI commands and arguments
+### CLI commands and arguments
 
-### `init`
+#### `init`
 
 | Argument | Required | Default | Accepted values | Purpose |
 | --- | --- | --- | --- | --- |
 | `-c`, `--config` | No | `rust-cache.toml` | File path | Where the starter config should be written. |
 | `-f`, `--force` | No | `false` | Boolean flag | Overwrite an existing config file. |
 
-### `env`
+#### `env`
 
 | Argument | Required | Default | Accepted values | Purpose |
 | --- | --- | --- | --- | --- |
 | `-c`, `--config` | No | `rust-cache.toml` | File path | Prints the environment variables that would be applied by `run`. |
 
-### `run`
+#### `run`
 
 | Argument | Required | Default | Accepted values | Purpose |
 | --- | --- | --- | --- | --- |
 | `-c`, `--config` | No | `rust-cache.toml` | File path | Config file to read. |
 | `--` followed by command | Yes | none | Any command and arguments | Command to execute with the planned cache environment. The separator is required so the command is not parsed as `rust-cache` options. |
 
-### `clean`
+#### `clean`
 
 | Argument | Required | Default | Accepted values | Purpose |
 | --- | --- | --- | --- | --- |
 | `-c`, `--config` | No | `rust-cache.toml` | File path | Removes the configured cache directory. |
 
-### `doctor`
+#### `doctor`
 
 | Argument | Required | Default | Accepted values | Purpose |
 | --- | --- | --- | --- | --- |
@@ -155,7 +169,9 @@ Generated paths normally look like this:
     └── gradle/
 ```
 
-## Practical cache workflows
+## Practical workflows
+
+### Practical cache workflows
 
 ### Run Cargo with project-local cache routing
 
@@ -181,11 +197,13 @@ rust-cache clean --config rust-cache.toml
 
 This removes the configured cache root. It should not remove source files or project-owned configuration.
 
-## Troubleshooting
+## Reference
+
+### Troubleshooting
 
 If cache folders appear in unexpected places, run `rust-cache env` and check `cache.dir` and `cache.package`. In monorepos, prefer an explicit package name when automatic package detection is not stable enough. If a command cannot find dependencies after enabling `redirect_cargo_home`, remember that `CARGO_HOME` has moved into the cache root and may need to be warmed again.
 
-## Release artifacts
+### Release artifacts
 
 Release assets are named by tool, version, and host target. Typical examples:
 
@@ -199,7 +217,7 @@ rust-cache-v1.2.3-x86_64-pc-windows-msvc.exe
 
 Checksum files use the same name with `.sha256` appended. The action verifies them when the runner has `sha256sum` or `shasum`.
 
-## Operational notes
+### Operational notes
 
 `rust-cache` does not replace GitHub Actions cache, sccache, or Cargo's dependency cache. It only chooses where build tools write their generated files. It is safe to use around `cargo-release` and `tauri-release`; those tools still own the build and release behavior.
 
