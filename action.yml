@@ -29,7 +29,7 @@ outputs:
     description: Absolute path to the installed executable.
     value: ${{ steps.install.outputs.bin-path }}
   host-target:
-    description: Rust-style host target used to select the executable asset.
+    description: Release target used to select the executable asset.
     value: ${{ steps.host.outputs.host-target }}
 
 runs:
@@ -46,16 +46,16 @@ runs:
           Linux)
             ARCH="$(uname -m)"
             case "${ARCH}" in
-              x86_64|amd64) HOST="x86_64-unknown-linux-gnu" ;;
-              aarch64|arm64) HOST="aarch64-unknown-linux-gnu" ;;
+              x86_64|amd64) HOST="linux-x64" ;;
+              aarch64|arm64) echo "::error::Linux ARM64 assets are not published yet."; exit 1 ;;
               *) echo "::error::Unsupported Linux architecture: ${ARCH}"; exit 1 ;;
             esac
             ;;
           macOS)
             ARCH="$(uname -m)"
             case "${ARCH}" in
-              x86_64|amd64) HOST="x86_64-apple-darwin" ;;
-              aarch64|arm64) HOST="aarch64-apple-darwin" ;;
+              x86_64|amd64) HOST="macos-x64" ;;
+              aarch64|arm64) HOST="macos-arm64" ;;
               *) echo "::error::Unsupported macOS architecture: ${ARCH}"; exit 1 ;;
             esac
             ;;
@@ -63,8 +63,8 @@ runs:
             EXT=".exe"
             ARCH="${PROCESSOR_ARCHITECTURE:-AMD64}"
             case "${ARCH}" in
-              AMD64|amd64|x86_64) HOST="x86_64-pc-windows-msvc" ;;
-              ARM64|arm64|aarch64) HOST="aarch64-pc-windows-msvc" ;;
+              AMD64|amd64|x86_64) HOST="windows-x64" ;;
+              ARM64|arm64|aarch64) echo "::error::Windows ARM64 assets are not published yet."; exit 1 ;;
               *) echo "::error::Unsupported Windows architecture: ${ARCH}"; exit 1 ;;
             esac
             ;;
